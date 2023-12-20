@@ -8,9 +8,8 @@ import numpy as np
 
 import time
 
-data = pd.read_excel("./data.xlsx");
-rgis = data["rgi"].unique();
-
+data = pd.read_excel("./data.xlsx").iloc[0:3, :];
+RGIS = data["rgi"].unique();
 
 service = Service(executable_path=r"./chromedriver");
 driver = webdriver.Chrome(service=service);
@@ -20,9 +19,9 @@ driver.maximize_window();
 
 time.sleep(2);
 
-name_input = driver.find_element(By.CSS_SELECTOR, ".q-field__native.q-placeholder[name='username']");
-password_input = driver.find_element(By.CSS_SELECTOR, ".q-field__native.q-placeholder[name='password']");
-submit_login = driver.find_element(By.CSS_SELECTOR, "[name='btn_logar']");
+name_input = get_element_after_rendered(driver, ".q-field__native.q-placeholder[name='username']");
+password_input = get_element_after_rendered(driver, ".q-field__native.q-placeholder[name='password']");
+submit_login = get_element_after_rendered(driver, "[name='btn_logar']");
 
 name_input.clear();
 password_input.clear();
@@ -33,18 +32,25 @@ password_input.send_keys("Caj323");
 submit_login.click();
 time.sleep(0.3);
 submit_login.click();
+menu_item = get_element_after_rendered(driver, elem_name="button[name='menuItem']");
 OS_STATUS_POSITION_IN_TABLE = 3;
-menu_item = get_element_after_rendered(driver, elem_name="button[name='menuItem']",)
 
-for i, rgi in enumerate(rgis):
+
+for i, rgi in enumerate(RGIS):
+    subdata = data[data["rgi"]==rgi];
+    meter_code = f"Número do medidor: {subdata['meter_serial_number'].unique()[0]}";
+    executed_at = f"Data da execução do serviço: {subdata['created_at'].unique()[0]}";
+    last_reading = f"Leitura: {subdata['current_reading'].unique()[0]}";
+    module_number = f"Número do módulo: {subdata['device_serial_number'].unique()[0]}";
+    data_to_deletion = [meter_code, executed_at, last_reading, module_number];
     menu_item.click();
     # from the first iteration, the link will be already open. No need to expand it again
     if i == 0:
-        attendence_button = get_element_after_rendered(driver, elem_name="div[name='M00003']",)
+        attendence_button = get_element_after_rendered(driver, elem_name="div[name='M00003']",);
         attendence_button.click();
 
     time.sleep(0.7);
-    start_attendence_link = get_element_after_rendered(driver, elem_name="a[href='#/interno/atendimento']")
+    start_attendence_link = get_element_after_rendered(driver, elem_name="a[href='#/interno/atendimento']");
     start_attendence_link.click();
 
     search_rgi_field = get_element_after_rendered(driver, elem_name=".q-field__native.q-placeholder[name='search']");
@@ -69,7 +75,7 @@ for i, rgi in enumerate(rgis):
     if os_status_content == "encerrado - executado":
         continue;
     elif os_status_content == "pendente":
-        finish_os(driver, element_name=".q-checkbox__bg.absolute");
+        finish_os(driver, element_name=".q-checkbox__bg.absolute", os_data=data_to_deletion);
 
 time.sleep(5)
 driver.quit();

@@ -2,9 +2,12 @@ from selenium.webdriver.support.ui import WebDriverWait;
 from selenium.webdriver.common.by import By;
 from selenium.webdriver.support import expected_conditions as EC;
 from selenium import webdriver;
+from selenium.webdriver.remote.webelement import WebElement;
+from selenium.webdriver.common.keys import Keys;
+import time
 
 def get_element_after_rendered(driver:webdriver.Chrome, elem_name:str, selector:By = By.CSS_SELECTOR,
-                               timeout:int = 5, selection_mode:str = "single"):
+                               timeout:int = 5, selection_mode:str = "single") -> WebElement:
     """
         Waits for an element to be rendered on the screen,
         and only then selects it.
@@ -29,7 +32,8 @@ def get_element_after_rendered(driver:webdriver.Chrome, elem_name:str, selector:
     return element_in_html;
 
 
-def finish_os(driver: webdriver.Chrome, element_name: str):
+def finish_os(driver: webdriver.Chrome, element_name: str, **kwargs):
+    data = kwargs["os_data"];
     choosed_os = get_element_after_rendered(driver, element_name, selection_mode="all")[0];
     choosed_os.click();
 
@@ -38,4 +42,15 @@ def finish_os(driver: webdriver.Chrome, element_name: str):
 
     second_confirmation = driver.find_element(By.XPATH, '//div[contains(text(), "Encerrar Ordem de Serviço")]');
     second_confirmation.click();
+
+    text_area = get_element_after_rendered(driver, "textarea[name='parecer']");
+    for line in data:
+        text_area.send_keys(f"{line}\n");
+    
+    next_step_btn = get_element_after_rendered(driver, ".q-btn.q-btn-item.non-selectable.no-outline.q-px-md.q-btn--standard.q-btn--rectangle.bg-grey-4.text-dark.q-btn--actionable.q-focusable.q-hoverable.q-btn--wrap")
+    next_step_btn.click();
+
+    equip_id_input = get_element_after_rendered(driver, "input#idEquipe");
+    equip_id_input.send_keys("vogel01" + Keys.ENTER);
+    time.sleep(5);
     return;
