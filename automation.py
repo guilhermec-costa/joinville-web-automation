@@ -10,10 +10,11 @@ import asyncio;
 
 import time
 
-data = pd.read_excel("./data_with_all_devices.xlsx").iloc[0:4, :];
+data = pd.read_excel("./data_with_all_devices.xlsx");
+data = data[data['rgi'].isin(['00232979-4', "01328121-6", "01315635-7", "01319723-1"])];
 RGIS = data["rgi"].unique();
 
-service = Service(executable_path=r"./chromedriver.exe");
+service = Service(executable_path=r"./chromedriver");
 driver = webdriver.Chrome(service=service);
 
 driver.get("https://aguasdejoinville.com.br/sansys/index.html");
@@ -40,10 +41,11 @@ OS_STATUS_POSITION_IN_TABLE = 3;
 async def main():
 
     for i, rgi in enumerate(RGIS):
+        print("RGI: ", rgi)
         subdata = data[data["rgi"]==rgi];
         meter_code = f"Número do medidor: {subdata['meter_serial_number'].unique()[0]}";
         executed_at = f"Data da execução do serviço: {subdata['created_at'].unique()[0]}";
-        last_reading = f"Leitura: {subdata['current_reading'].unique()[0]}";
+        last_reading = f"Leitura: {subdata['reading_from_instalation'].unique()[0]}";
         module_number = f"Número do módulo: {subdata['device_serial_number'].unique()[0]}";
         photo_urls = subdata["photo_link"].unique();
         data_to_deletion = [meter_code, executed_at, last_reading, module_number];
@@ -69,7 +71,9 @@ async def main():
         except:
             pass;
 
+        time.sleep(1);
         see_service_orders = get_element_after_rendered(driver, ".menu--item > a[href*='ordens-de-servico']");
+        time.sleep(1);
         see_service_orders.click();
 
         os_status = get_element_after_rendered(driver, "small[data-v-607cef2f]", selection_mode="all")\
@@ -77,14 +81,17 @@ async def main():
 
         os_status_content = os_status.get_attribute("innerHTML").lower().strip();
         if os_status_content == "pendente":
+            finish_os(driver, element_name=".q-checkbox__bg.absolute", os_data=data_to_deletion);
+            time.sleep(2)
             photos_status, photo_element = os_has_photos(driver);
             if photos_status == False:
+                time.sleep(1);
                 await get_photos_from_urls(rgi, photo_urls);
                 attach_photos_from_rgi(driver, rgi, photo_element);
-            finish_os(driver, element_name=".q-checkbox__bg.absolute", os_data=data_to_deletion);
         elif os_status_content == "encerrado - executado":
             photos_status, photo_element = os_has_photos(driver);
             if photos_status == False:
+                time.sleep(1);
                 await get_photos_from_urls(rgi, photo_urls);
                 attach_photos_from_rgi(driver, rgi, photo_element);
             continue;
