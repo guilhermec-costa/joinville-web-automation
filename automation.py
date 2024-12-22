@@ -17,7 +17,7 @@ RGIS = data["rgi"].unique();
 service = Service(executable_path=r"./chromedriver");
 driver = webdriver.Chrome(service=service);
 
-driver.get("https://aguasdejoinville.com.br/sansys/index.html");
+driver.get("env.url");
 driver.maximize_window();
 
 time.sleep(2);
@@ -30,8 +30,8 @@ name_input.clear();
 password_input.clear();
 
 # login form
-name_input.send_keys("vogel.000001");
-password_input.send_keys("Caj323");
+name_input.send_keys("env.user");
+password_input.send_keys("env.pwd");
 submit_login.click();
 time.sleep(0.3);
 submit_login.click();
